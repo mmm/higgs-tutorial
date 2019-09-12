@@ -1,6 +1,6 @@
 # Rediscovering the Higgs boson using the Google Cloud Platform
 
-On 4 July 2012, Researchers at the European Council for Nuclear Research (CERN)
+On 4 July 2012, Researchers at the European Organization for Nuclear Research (CERN)
 [announced](https://cms.cern/physics/higgs-boson/observation-new-particle-mass-125-gev)
 that they had recorded events in the ATLAS and CMS experiments at the Large
 Hadron Collider (LHC) that had properties consistent with a new particle, the
@@ -85,7 +85,7 @@ processes with the actual events measured in the detectors.
 That's exactly the
 [analysis](https://cms.cern/physics/higgs-boson/observation-new-particle-mass-125-gev)
 you'll do here.  You run jobs that compare simulations of background
-events/processes to actual luminosity data from detectors. If the luminosity
+events/processes to actual observed data from detectors. If the observed
 data contains a
 [statistical excess](https://cms.cern/physics/higgs-boson-terms-and-definitions)
 of any of these particular decay channels, then that indicates the presence of
