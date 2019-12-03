@@ -1,105 +1,68 @@
 # Rediscovering the Higgs boson using the Google Cloud Platform
 
+This tutorial shows you how to replicate on Google Cloud Platform (GCP) a small
+end-to-end slice of the analysis that was used to discover the Higgs boson
+particle. The tutorial uses Kubernetes clusters to emulate the distributed
+nature of the original analysis.
+
+This tutorial is intended for []. It assumes that you're familiar with
+Terraform, Kubernetes, Redis, and Jupyter notebooks, and it assumes you're
+generally familiar with GCP.
+
+[TOC]
+
+## Introduction
+
 On 4 July 2012, Researchers at the European Organization for Nuclear Research (CERN)
 [announced](https://cms.cern/physics/higgs-boson/observation-new-particle-mass-125-gev)
 that they had recorded events in the ATLAS and CMS experiments at the Large
 Hadron Collider (LHC) that had properties consistent with a new particle, the
 Higgs boson.
 
-The corresponding analysis required compute hardware spread throughout
-datacenters around the world, with significant human coordination across the
-sites. It was a massive effort requiring lots of people, compute, and storage
-resources.
+Some particles such as the Higgs boson are so hard to detect that the problem
+has to be approached indirectly.  Information about the Higgs boson can be
+inferred by looking at the shower of particle interactions from a collision in
+the LHC. Researchers try to determine how many of the interactions seen can
+happen with or without a Higgs boson present.
 
-On 8 October 2013, the Nobel Prize in Physics was
-[awarded](https://www.nobelprize.org/prizes/physics/2013/summary/) to Francois
-Englert and Peter W. Higgs based on this discovery.
-
-On 21 May 2019, Researchers at CERN, 
-Lukas Heinrich ([`@lukasheinrich_`](https://twitter.com/lukasheinrich_)) and 
-Ricardo Rocha ([`@ahcorporto`](https://twitter.com/ahcorporto))
-[demonstrated](https://kccnceu19.sched.com/event/MRyv/keynote-reperforming-a-nobel-prize-discovery-on-kubernetes-ricardo-rocha-computing-engineer-lukas-heinrich-physicist-cern)
-([video](https://www.youtube.com/watch?v=2PRGUOxL36M),
-[slides](https://static.sched.com/hosted_files/kccnceu19/14/Lukas%20Heinrich-Ricardo%20Rocha%20May%2021%20Evening.pdf))
-how they (re)-performed the Higgs discovery using Kubernetes running on the
-Google Cloud Platform (GCP) using over 20k cores and over 70 TB of data stored
-on Google Cloud Storage.  They completed this analysis onstage in a matter of
-minutes.
-
-
-## Objectives
-
-In this tutorial you will use the GCP Cloud Shell to set up and run a small
-end-to-end slice of that prize-winning analysis!
-
-
-### The Analysis
-
-Scientists learn about the fundamental building blocks (forces and particles)
-of nature by essentially smashing things together and watching what happens.
-They use a type of 
-[particle accelerator](https://en.wikipedia.org/wiki/Particle_accelerator)
-(unsurprisingly called a [Collider](https://en.wikipedia.org/wiki/Collider)!)
-to run these experiments.  This is the "C" in LHC.
-
-The experiments that led to the Higgs discovery at the LHC used Protons as the
-particles to smash.  Protons are classified by their behavior and composition
-as [Hadrons](https://en.wikipedia.org/wiki/Hadron), the "H" in LHC.
-
-Particle collisions show very different things at different energy scales.
-I.e., depending how _hard_ the particles are smashed together or equivalently
-how fast they are going before they collide. The Protons in the LHC were sped
-up to really high energy levels before being smashed together.  They were going
-so fast that the energy levels of the resulting collisions were in the 7-8
-[TeV](https://en.wikipedia.org/wiki/Electronvolt) range!  The accelerator used
-to speed them up to such high energy has a tunnel with a circumference of 27km
-(17mi), the "L" in LHC.
-
-A great deal of hard work and ingenuity goes into building the massive
-apparatus needed to perform these experiments and, just as importantly, to
-measure the results of the collisions involved.
-
-You can't actually see a subatomic particle with the naked eye.  You detect it
-using devices which interact with the particle in known and measurable ways.
-These particle detectors might simply prove that a particle was there,
-count how many particles it sees, or might be able to determine some additional
-particle properties such as charge, mass, etc.  All of which depends heavily on
-the particles being measured as well as the detectors being used to do the
-measuring.
-
-Some particles such as the Higgs boson are so hard to detect that you have to
-work at the problem indirectly.  The basic approach in this case is that a
-Higgs boson quickly decays into other sets of particles, so look for _those_
-particles. You can infer information about the Higgs boson involved in the
-process by looking at the overall shower of particle interactions from the
-collision.  You try to determine how many of the interactions seen can happen
-with or without a Higgs boson present.
-
-In order to detect particles that the Higgs boson will decay into. You compare
-the shower of decay events
+At CERN, to detect particles that the Higgs boson decays into, researchers
+compared the shower of decay events
 ([decay channels](https://cms.cern/physics/higgs-boson-terms-and-definitions))
-that you expect to see through non-Higgs-related (a.k.a.,
+that they expected to see through non-Higgs-related (that is,
 [Background](https://cms.cern/physics/higgs-boson-terms-and-definitions))
-processes with the actual events measured in the detectors.
+processes with the actual events measured in the detectors. The corresponding
+analysis required compute hardware spread across datacenters around the world,
+with significant human coordination across the sites. It was a massive effort
+that required a lot of people, compute resources, and storage resources.
 
-That's exactly the
+In this tutorial, you perform a version of the same 
 [analysis](https://cms.cern/physics/higgs-boson/observation-new-particle-mass-125-gev)
-you'll do here.  You run jobs that compare simulations of background
-events/processes to actual observed data from detectors. If the observed
-data contains a
+that the researchers used. You run jobs that compare simulations of background
+events/processes to actual observed data from detectors. If the observed data
+contains a
 [statistical excess](https://cms.cern/physics/higgs-boson-terms-and-definitions)
-of any of these particular decay channels, then that indicates the presence of
-a new particle, the Higgs.
+of any of these particular decay channels, it indicates the presence of a new
+particle, namely the Higgs boson.
+
+For this tutorial, you create a small cluster and pull only a small slice of
+the data. This enables you to work through the end-to-end analysis while
+keeping costs down.
 
 
-### The Infrastructure
+## Architecture
 
-Google Kubernetes Engine (GKE) provides the core infrastructure you'll use to
-run analysis jobs against a selection of the
-[CERN Open Data](http://opendata.cern.ch/)
-available in Google Cloud Storage (GCS).
+The following diagram illustrates the architecture that you create in this
+tutorial.
 
-![Higgs analysis - full architecture](higgs-analysis-full-architecture.svg.png)
+![](higgs-analysis-full-architecture.svg.png)
+
+The data is derived from CERN Open Data and is stored in a Cloud Storage
+bucket. Google Kubernetes Engine (GKE) provides the core infrastructure you’ll
+use to run analysis jobs
+
+You manage cloud infrastructure resources for this tutorial using Terraform,
+which is already installed and configured in GCP. This helps simplify the steps
+for the tutorial, and promotes best practices when working in the cloud.
 
 
 ## Costs
@@ -115,135 +78,141 @@ You can use the
 to generate a cost estimate based on your projected usage.
 
 
+## Objectives
+
+- Create a Kubernetes cluster
+- Run a Jupyter notebook that emulates the analysis work
+- Cache data using Redis
+
+
 ## Before you begin
 
-Start by opening
-[https://console.cloud.google.com/](https://console.cloud.google.com/)
-in a browser.
+1. Select or create a GCP project.
 
-Create a new GCP Project using the
-[Cloud Resource Manager](https://console.cloud.google.com/cloud-resource-manager).
-The project you create is just for this tutorial, so you'll delete it below
-when you're done.
+    GO TO THE MANAGE RESOURCES PAGE
 
-You will need to
-[enable billing](https://support.google.com/cloud/answer/6293499#enable-billing)
-for this project.
+2. Enable billing for your project.
 
-You will also need to enable the Kubernetes Engine (GKE) service for this account
+    ENABLE BILLING
 
-[Enable Tutorial Services](https://console.cloud.google.com/flows/enableapi?apiid=container.googleapis.com,containerregistry.googleapis.com,containeranalysis.googleapis.com,cloudresourcemanager.googleapis.com)
-    
-Next, make sure the project you just created is selected in the top of the
-Cloud Console
+3. Enable the Kubernetes Engine (GKE) API:
 
-    screenshot of cloud console project selection [Editor: please help]
+    Enable the GKE API
 
-Then open a Cloud Shell associated with the project you just created
+
+## Initialize the environment
+
+1. Open Cloud Shell.
 
 [Launch Cloud Shell](https://console.cloud.google.com/?cloudshell=true)
 
-It's important that the current Cloud Shell project is the one you just
-created.  Verify that
+2. Make sure the project you just created is selected:
+
+    screenshot of cloud console project selection [Editor: please help]
+
+3. Verify that current Cloud Shell project is the one you just created:
 
     echo $GOOGLE_CLOUD_PROJECT
 
-shows that new project.
-
-All commands in this tutorial are run from this Cloud Shell.
+You run all the commands in this tutorial from this Cloud Shell window.
 
 
-## Download the code
+## Downloading the code
 
-Clone the tutorial repository
+1. In Cloud Shell, clone the tutorial repository:
 
     git clone https://github.com/mmm/higgs-tutorial
-    cd higgs-tutorial
-
-You'll manage cloud infrastructure resources for this tutorial using
-[Terraform](https://terraform.io/) which is already installed and configured in
-your GCP Cloud Shell. This helps both to keep things initially as simple as
-possible, but also to promote best practices when working in the cloud.
 
 
 ## Create a Kubernetes cluster
 
-Create the cluster
+1. Go to the subdirectory that contains the configuration information for
+   Terraform:
 
-    cd terraform/gke-cluster
+    cd higgs-tutorial/terraform/gke-cluster
+
+2. Create the cluster.  As noted earlier, this task is handled by running
+   Terraform commands.
+
     terraform init
     terraform plan
     terraform apply
 
-![Higgs analysis - create GKE cluster](higgs-analysis-create-gke-cluster.svg.png)
-
-This will take a few minutes for the Kubernetes nodes to come up.
+   It takes a few minutes for the Kubernetes nodes to start.
 
 
-## Get cluster credentials
-
-Once the previous commands complete, get credentials for that new cluster using
-the following command:
+3. When the cluster is running, get credentials for the new cluster:
 
     gcloud container clusters get-credentials higgs-tutorial --region us-central1
 
-Set the cluster name and region if you've changed these default values.
+   For this tutorial, you use `us-central1` as the region.
 
 
-## Deploy Jupyter and Redis
+## Deploying Jupyter and Redis
 
-Next lay down the basic framework of tools that are needed before any job runs
-are kicked off
+The next task is to create the basic framework of tools that are needed before any job runs
+are kicked off.
+
+1. Go to the subdirectory that contains the configuration information for the tools:
 
     cd ../prep
+
+2. Install the tools:
+
     terraform init
     terraform plan
     terraform apply
 
-![Higgs analysis - prepare for job runs](higgs-analysis-prepare-for-job-runs.svg.png)
+   This set of commands starts a Redis cache, a Jupyter notebook server, and a Kubernetes
+   DaemonSet to pre-pull all the docker images that are needed for analysis.
 
-This will spin up a Redis cache, a Jupyter notebook server, and a Kubernetes
-Daemonset to pre-pull all the docker images needed for analysis.  When the
-`terraform apply` completes, copy the output Jupyter URL and open that in a new
-browser window.
+3. When the `terraform apply` command has finished, copy the Jupyter URL that's
+   displayed and go to that URL in a new browser window. Later you visualize
+   the results of the analysis in this window.
 
 
-## Kick off Kubernetes jobs
+## Starting the Kubernetes jobs
 
-Now, back in your Cloud Shell, kick off the actual analysis jobs
+1. In Cloud Shell, go to the subdirectory where the jobs are defined:
 
     cd ../jobs
+
+2. Start the analysis jobs
+
     terraform init
     terraform plan
     terraform apply
 
-which essentially loads up a separate kubernetes job for each datafile in the
-dataset.
-
-![Higgs analysis - create Kubernetes Jobs](higgs-analysis-full-architecture.svg.png)
+   These commands load a separate kubernetes job for each datafile in the
+   dataset.
 
 
 ## Visualize results
 
-You can visualize results in a Jupyter notebook as the jobs run.  From the
-browser window opened earlier, click to open the `PlotHiggs.ipynb` notebook.
-Click through and execute all cells in the notebook to make sure everything
-is running.
+You can visualize results in a Jupyter notebook as the jobs run.
 
-Note that the default behavior in this notebook is to render a graph of test
-data and _not_ the data coming directly from our jobs. This test data plot is
-what we would see if we were to run the 26,000 core cluster against the _full_
-74TB dataset used on stage.
+1. In the browser window that you opened earlier, click to open the
+   `PlotHiggs.ipynb` notebook.
 
-![Plot using test data](test-plot.png)
+2. Click through and execute all cells in the notebook to make sure everything
+   is running.
 
-For this tutorial, you've spun up a small cluster and pulled only a bite-sized
-slice of the data. This enables you to work through the end-to-end analysis
-while still keeping costs down.
+   The default behavior in this notebook is to render a graph of test data,
+   _not_ of the data coming directly from the jobs. This test data plot is what
+   you would see if you ran the 26,000 core cluster against the _full_ 74TB
+   dataset used on stage.
 
-Once you've validated your notebook runs, now point it at the Redis cache used
-to store the outputs of your actual job runs. Within the Jupyter notebook,
-change the cell containing the main plot loop
+![](test-plot.png)
+
+
+## Store the results
+
+After you've verified that your notebook runs, you can use the Redis cache
+to store the outputs of your job runs.
+
+1. Open the Jupyter notebook.
+
+2. Find the cell that contains the main plot loop:
 
 ```python
 plotnb.reset_data()
@@ -252,7 +221,8 @@ while True:
     groups = plotnb.update_plot(figure,data)
 ```
 
-to `load_data` from the Redis cache instead of the default test dataset
+3. Change the method that loads data (`load_data`) to get the data from the
+   Redis cache instead of the default test dataset:
 
 ```python
 plotnb.reset_data()
@@ -264,7 +234,7 @@ while True:
 When you re-execute that cell you'll see a plot of the data just processed on
 your tutorial-sized cluster.
 
-![Plot using tutorial data](tutorial-plot.png)
+![](tutorial-plot.png)
 
 
 ## Cleaning up
@@ -297,19 +267,20 @@ Caution: Deleting a project has the following effects:
 
 ### Deleting resources using Terraform
 
-Alternatively, if you added the tutorial resources to an _existing_ project, you
-can still clean up those resources using Terraform.
+If you added the tutorial resources to an existing project, you
+can clean up those resources using Terraform.
 
-From the `jobs` sub-directory, run
+1. In Cloud Shell, remove the jobs:
 
+    cd jobs
     terraform destroy
 
-then
+2. Remove the Jupyter and Redis servers:
 
     cd ../prep
     terraform destroy
 
-and
+3. Remove the GKE Cluster:
 
     cd ../gke-cluster
     terraform destroy
@@ -317,24 +288,21 @@ and
 
 ## What's next
 
-There are so many exciting directions to take to learn more about what you've
-done here!
-
-- Physics.  You can dig further into
+- You can dig further into
   [Physics at CERN](https://home.cern/science/physics).
 
-- Infrastructure.  Learn more about
+- Learn more about
   [Cloud](https://cloud.google.com/),
   [Kubernetes](https://cloud.google.com/kubernetes),
   High Performance Computing (HPC) on GCP
   [reference architectures](https://cloud.google.com/solutions/hpc/) and 
   [posts](https://cloud.google.com/blog/topics/hpc).
 
-- Software development.  Learn more about
+- Learn more about
   [CERN software](https://ep-dep-sft.web.cern.ch).
 
-- Hardware development.  Learn more about the detectors used in experiments at CERN
+- Learn more about the detectors used in experiments at CERN
   like [CMS](https://home.cern/science/experiments/cms),
   [ATLAS](https://home.cern/science/experiments/atlas),
-  and [other experiments](https://home.cern/science/experiments)!
+  and [other experiments](https://home.cern/science/experiments).
 
