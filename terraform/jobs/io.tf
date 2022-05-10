@@ -18,9 +18,9 @@ variable "namespace" {
 }
 
 variable "higgs-cms-image" {
-  default = "gcr.io/mmm-0b85/cms-higgs-4l-full"
+  default = "gcr.io/mmm-goog-ad-higgs/cms-higgs-4l-full"
 }
 
 variable "higgs-worker-image" {
-  default = "gcr.io/mmm-0b85/worker"
+  default = "gcr.io/mmm-goog-ad-higgs/worker"
 }
