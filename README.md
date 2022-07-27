@@ -1,5 +1,15 @@
 # Rediscovering the Higgs boson using the Google Cloud Platform
 
+---
+
+# Update:
+
+This repository now has a new home: <https://github.com/GoogleCloudPlatform/scientific-computing-examples>
+Please keep an eye out for updates and direct all activity to that repo.
+Thanks!
+
+---
+
 On 4 July 2012, Researchers at the European Organization for Nuclear Research (CERN)
 [announced](https://cms.cern/physics/higgs-boson/observation-new-particle-mass-125-gev)
 that they had recorded events in the ATLAS and CMS experiments at the Large
